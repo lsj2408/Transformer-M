@@ -76,15 +76,15 @@ mv L18.pt logs/L18/
 ## Evaluation
 
 ```shell
-export data_path='./datasets/pcq-pos' 				   # path to data
+export data_path='./datasets/pcq-pos' 				       # path to data
 export save_path='./logs/{folder_to_checkpoints}'	   # path to checkpoints, e.g., ./logs/L12
 
-export layers=12									   # set layers=18 for 18-layer model
-export hidden_size=768								   # dimension of hidden layers
-export ffn_size=768									   # dimension of feed-forward layers
-export num_head=32									   # number of attention heads
-export num_3d_bias_kernel=128						   # number of Gaussian Basis kernels
-export batch_size=256								   # batch size for a single gpu
+export layers=12									                   # set layers=18 for 18-layer model
+export hidden_size=768								               # dimension of hidden layers
+export ffn_size=768									                 # dimension of feed-forward layers
+export num_head=32									                 # number of attention heads
+export num_3d_bias_kernel=128						             # number of Gaussian Basis kernels
+export batch_size=256								                 # batch size for a single gpu
 export dataset_name="PCQM4M-LSC-V2-3D"				   
 export add_3d="true"
 bash evaluate.sh
@@ -94,27 +94,27 @@ bash evaluate.sh
 
 ```shell
 # L12. Valid MAE: 0.0785
-export data_path='./datasets/pcq-pos' # path to data
-export save_path='./logs/'	          # path to logs
+export data_path='./datasets/pcq-pos'               # path to data
+export save_path='./logs/'	                        # path to logs
 
-export lr=2e-4				          # peak learning rate
-export warmup_steps=150000            # warmup steps
-export total_steps=1500000            # total steps
-export layers=12                      # set layers=18 for 18-layer model
-export hidden_size=768                # dimension of hidden layers
-export ffn_size=768			          # dimension of feed-forward layers
-export num_head=32			          # number of attention heads
-export batch_size=32		          # batch size for a single gpu
+export lr=2e-4				                              # peak learning rate
+export warmup_steps=150000                          # warmup steps
+export total_steps=1500000                          # total steps
+export layers=12                                    # set layers=18 for 18-layer model
+export hidden_size=768                              # dimension of hidden layers
+export ffn_size=768			                            # dimension of feed-forward layers
+export num_head=32			                            # number of attention heads
+export batch_size=32		                            # batch size for a single gpu
 export dropout=0.0
 export act_dropout=0.1
 export attn_dropout=0.1
 export weight_decay=0.0
-export droppath_prob=0.1       # probability of stochastic depth
-export noise_scale=0.2         # noise scale
-export mode_prob="0.2,0.2,0.6" # mode distribution for {2D+3D, 2D, 3D}
+export droppath_prob=0.1                            # probability of stochastic depth
+export noise_scale=0.2                              # noise scale
+export mode_prob="0.2,0.2,0.6"                      # mode distribution for {2D+3D, 2D, 3D}
 export dataset_name="PCQM4M-LSC-V2-3D"
 export add_3d="true"
-export num_3d_bias_kernel=128  # number of Gaussian Basis kernels
+export num_3d_bias_kernel=128                       # number of Gaussian Basis kernels
 bash train.sh
 ```
 
