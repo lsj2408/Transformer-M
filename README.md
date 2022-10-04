@@ -106,7 +106,7 @@ export layers=12                                    # set layers=18 for 18-layer
 export hidden_size=768                              # dimension of hidden layers
 export ffn_size=768                                 # dimension of feed-forward layers
 export num_head=32                                  # number of attention heads
-export batch_size=32                                # batch size for a single gpu
+export batch_size=256                               # batch size for a single gpu
 export dropout=0.0
 export act_dropout=0.1
 export attn_dropout=0.1
