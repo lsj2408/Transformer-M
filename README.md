@@ -2,6 +2,10 @@
 
 This repository is the official implementation of “One Transformer Can Understand Both 2D & 3D Molecular Data”, based on the official implementation of [Graphormer](https://github.com/microsoft/Graphormer) and [Fairseq](https://github.com/facebookresearch/fairseq) in [PyTorch](https://github.com/pytorch/pytorch).
 
+> One Transformer Can Understand Both 2D & 3D Molecular Data
+>
+> *Shengjie Luo, Tianlang Chen\*, Yixian Xu\*, Shuxin Zheng, Tie-Yan Liu, Liwei Wang, Di He*
+
 ## Overview
 
 ![arch](docs/arch.jpg)
