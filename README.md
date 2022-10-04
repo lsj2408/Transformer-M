@@ -124,6 +124,8 @@ Our model is trained on 4 NVIDIA Tesla A100 GPUs (40GB). The time cost for an ep
 
 ## Citation
 
+If you find this work useful, please kindly cite following papers:
+
 ```latex
 @inproceedings{
   ying2021do,
