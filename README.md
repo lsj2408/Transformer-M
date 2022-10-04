@@ -52,7 +52,6 @@ pip install --upgrade tensorboardX==2.5.1
 # create paths to checkpoints for evaluation
 
 # download the above model weights (L12.pt, L18.pt) to ./
-cd Transformer-M
 mkdir -p logs/L12
 mkdir -p logs/L18
 mv L12.pt logs/L12/
@@ -68,7 +67,6 @@ mv L18.pt logs/L18/
   
   # download the above compressed datasets (pcqm4mv2-pos.zip) to ./
   unzip pcqm4mv2-pos.zip -d ./datasets
-  mv ./datasets ./Transformer-M
   ```
 
 - You can also directly execute the evaluation/training code to process data from scratch.
