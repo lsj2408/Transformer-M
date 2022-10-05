@@ -1,7 +1,7 @@
 # One Transformer Can Understand Both 2D & 3D Molecular Data
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/one-transformer-can-understand-both-2d-3d/graph-regression-on-pcqm4mv2-lsc)](https://paperswithcode.com/sota/graph-regression-on-pcqm4mv2-lsc?p=one-transformer-can-understand-both-2d-3d)
 
-This repository is the official implementation of “One Transformer Can Understand Both 2D & 3D Molecular Data”, based on the official implementation of [Graphormer](https://github.com/microsoft/Graphormer) and [Fairseq](https://github.com/facebookresearch/fairseq) in [PyTorch](https://github.com/pytorch/pytorch).
+This repository is the official implementation of “[One Transformer Can Understand Both 2D & 3D Molecular Data](https://arxiv.org/abs/2210.01765)”, based on the official implementation of [Graphormer](https://github.com/microsoft/Graphormer) and [Fairseq](https://github.com/facebookresearch/fairseq) in [PyTorch](https://github.com/pytorch/pytorch).
 
 > One Transformer Can Understand Both 2D & 3D Molecular Data
 >
