@@ -26,7 +26,7 @@ Transformer-M is a versatile and effective molecular model that can take molecul
 git clone https://github.com/lsj2408/Transformer-M.git
 ```
 
-- Install the dependencies (Using anaconda, tested with CUDA version 11.0)
+- Install the dependencies (Using [Anaconda](https://www.anaconda.com/), tested with CUDA version 11.0)
 
 ```shell
 cd ./Transformer-M
