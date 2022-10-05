@@ -1,4 +1,5 @@
 # One Transformer Can Understand Both 2D & 3D Molecular Data
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/one-transformer-can-understand-both-2d-3d/graph-regression-on-pcqm4mv2-lsc)](https://paperswithcode.com/sota/graph-regression-on-pcqm4mv2-lsc?p=one-transformer-can-understand-both-2d-3d)
 
 This repository is the official implementation of “One Transformer Can Understand Both 2D & 3D Molecular Data”, based on the official implementation of [Graphormer](https://github.com/microsoft/Graphormer) and [Fairseq](https://github.com/facebookresearch/fairseq) in [PyTorch](https://github.com/pytorch/pytorch).
 
@@ -127,6 +128,17 @@ Our model is trained on 4 NVIDIA Tesla A100 GPUs (40GB). The time cost for an ep
 If you find this work useful, please kindly cite following papers:
 
 ```latex
+@misc{https://doi.org/10.48550/arxiv.2210.01765,
+  doi = {10.48550/ARXIV.2210.01765},
+  url = {https://arxiv.org/abs/2210.01765},
+  author = {Luo, Shengjie and Chen, Tianlang and Xu, Yixian and Zheng, Shuxin and Liu, Tie-Yan and Wang, Liwei and He, Di},
+  keywords = {Machine Learning (cs.LG), Biomolecules (q-bio.BM), Machine Learning (stat.ML), FOS: Computer and information sciences, FOS: Computer and information sciences, FOS: Biological sciences, FOS: Biological sciences},
+  title = {One Transformer Can Understand Both 2D &amp; 3D Molecular Data},
+  publisher = {arXiv},
+  year = {2022},
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
 @inproceedings{
   ying2021do,
   title={Do Transformers Really Perform Badly for Graph Representation?},
