@@ -34,4 +34,4 @@ python evaluate.py \
 	--encoder-layers $layers --encoder-attention-heads $num_head --add-3d --num-3d-bias-kernel $num_3d_bias_kernel \
 	--encoder-embed-dim $hidden_size --encoder-ffn-embed-dim $ffn_size --droppath-prob $droppath_prob \
 	--attention-dropout $attn_dropout --act-dropout $act_dropout --dropout $dropout \
-	--save-dir $save_path --noise-scale $noise_scale --mode-prob $mode_prob
+	--save-dir $save_path --noise-scale $noise_scale --mode-prob $mode_prob --split valid --metric mae
