@@ -7,6 +7,13 @@ This repository is the official implementation of “[One Transformer Can Unders
 >
 > *Shengjie Luo, Tianlang Chen\*, Yixian Xu\*, Shuxin Zheng, Tie-Yan Liu, Liwei Wang, Di He*
 
+## 🔥 News
+- **2022.11.22**: Congratulations! Transformer-M has been used in **all Top-3 winners** in [**PCQM4Mv2 Track, 2nd OGB Large-Scale Challenge, NeurIPS 2022**](https://ogb.stanford.edu/neurips2022/results/#winners_pcqm4mv2)!
+  - 1st Place winner,    Team WeLoveGraphs,     [code](https://github.com/graphcore/ogb-lsc-pcqm4mv2) & [report](https://ogb.stanford.edu/paper/neurips2022/pcqm4mv2_WeLoveGraphs.pdf).
+  - co-2nd Place winner, Team VisNet,           [code](https://github.com/microsoft/ViSNet/tree/OGB-LSC%40NIPS2022) & [report](https://github.com/microsoft/ViSNet/blob/OGB-LSC%40NIPS2022/ViSNet_Tech_Report_OGB_LSC_NIPS22.pdf).
+  - co-2nd Place winner, Team NVIDIA-PCQM4Mv2,  [code](https://github.com/jfpuget/NVIDIA-PCQM4Mv2) & [report](https://ogb.stanford.edu/paper/neurips2022/pcqm4mv2_NVIDIA-PCQM4Mv2.pdf).
+- **2022.10.05**: Codes and model checkpoints are released!
+
 ## Overview
 
 ![arch](docs/arch.jpg)
@@ -128,15 +135,11 @@ Our model is trained on 4 NVIDIA Tesla A100 GPUs (40GB). The time cost for an ep
 If you find this work useful, please kindly cite following papers:
 
 ```latex
-@misc{https://doi.org/10.48550/arxiv.2210.01765,
-  doi = {10.48550/ARXIV.2210.01765},
-  url = {https://arxiv.org/abs/2210.01765},
-  author = {Luo, Shengjie and Chen, Tianlang and Xu, Yixian and Zheng, Shuxin and Liu, Tie-Yan and Wang, Liwei and He, Di},
-  keywords = {Machine Learning (cs.LG), Biomolecules (q-bio.BM), Machine Learning (stat.ML), FOS: Computer and information sciences, FOS: Computer and information sciences, FOS: Biological sciences, FOS: Biological sciences},
-  title = {One Transformer Can Understand Both 2D &amp; 3D Molecular Data},
-  publisher = {arXiv},
-  year = {2022},
-  copyright = {arXiv.org perpetual, non-exclusive license}
+@article{luo2022one,
+  title={One Transformer Can Understand Both 2D \& 3D Molecular Data},
+  author={Luo, Shengjie and Chen, Tianlang and Xu, Yixian and Zheng, Shuxin and Liu, Tie-Yan and Wang, Liwei and He, Di},
+  journal={arXiv preprint arXiv:2210.01765},
+  year={2022}
 }
 
 @inproceedings{
