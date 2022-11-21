@@ -8,7 +8,7 @@ This repository is the official implementation of “[One Transformer Can Unders
 > *Shengjie Luo, Tianlang Chen\*, Yixian Xu\*, Shuxin Zheng, Tie-Yan Liu, Liwei Wang, Di He*
 
 ## 🔥 News
-- **2022.11.22**: Congratulations! Transformer-M has been used in **all Top-3 winners** in [**PCQM4Mv2 Track, 2nd OGB Large-Scale Challenge, NeurIPS 2022**](https://ogb.stanford.edu/neurips2022/results/#winners_pcqm4mv2)!
+- **2022.11.22**: Congratulations! Transformer-M has been used by **all Top-3 winners** in [**PCQM4Mv2 Track, 2nd OGB Large-Scale Challenge, NeurIPS 2022**](https://ogb.stanford.edu/neurips2022/results/#winners_pcqm4mv2)!
   - 1st Place winner,    Team WeLoveGraphs,     [code](https://github.com/graphcore/ogb-lsc-pcqm4mv2) & [report](https://ogb.stanford.edu/paper/neurips2022/pcqm4mv2_WeLoveGraphs.pdf).
   - co-2nd Place winner, Team VisNet,           [code](https://github.com/microsoft/ViSNet/tree/OGB-LSC%40NIPS2022) & [report](https://github.com/microsoft/ViSNet/blob/OGB-LSC%40NIPS2022/ViSNet_Tech_Report_OGB_LSC_NIPS22.pdf).
   - co-2nd Place winner, Team NVIDIA-PCQM4Mv2,  [code](https://github.com/jfpuget/NVIDIA-PCQM4Mv2) & [report](https://ogb.stanford.edu/paper/neurips2022/pcqm4mv2_NVIDIA-PCQM4Mv2.pdf).
