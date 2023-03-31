@@ -36,6 +36,7 @@ from fairseq.optim.amp_optimizer import AMPOptimizer
 
 from ..data.dataset import (
     PCQPreprocessedData,
+    PYGPreprocessedData,
     OGBPreprocessedData,
     BatchedDataDataset,
     CacheAllDataset,
@@ -186,6 +187,214 @@ class GraphPredictionTask(FairseqTask):
 
         batched_data = BatchedDataDataset(batched_data,
             dataset_version="2D" if self.cfg.dataset_name == 'PCQM4M-LSC-V2' else "3D",
+            max_node=self.dm.max_node,
+            multi_hop_max_dist=self.dm.multi_hop_max_dist,
+            spatial_pos_max=self.dm.spatial_pos_max
+        )
+
+        target = TargetDataset(batched_data)
+
+        dataset = NestedDictionaryDataset({
+            "nsamples": NumSamplesDataset(),
+            "net_input": {
+                "batched_data": batched_data
+            },
+            "target": target
+        }, sizes=np.array([1] * len(batched_data))) # FIXME: workaroud, make all samples have a valid size
+
+        if split == "train":
+            dataset = EpochShuffleDataset(dataset, size=len(batched_data), seed=self.cfg.seed)
+
+        logger.info("Loaded {0} with #samples: {1}".format(split, len(dataset)))
+
+        self.datasets[split] = dataset
+        return self.datasets[split]
+
+    def build_model(self, cfg):
+        from fairseq import models
+
+        with open_dict(cfg) if OmegaConf.is_config(cfg) else contextlib.ExitStack():
+            cfg.max_positions = self.cfg.max_positions
+
+        model = models.build_model(cfg, self)
+
+        return model
+
+    def max_positions(self):
+        return self.cfg.max_positions
+
+    @property
+    def source_dictionary(self):
+        return self.dictionary
+
+    @property
+    def target_dictionary(self):
+        return self.dictionary
+
+    @property
+    def label_dictionary(self):
+        return self._label_dictionary
+
+
+@dataclass
+class GraphPredictionConfigQM9(FairseqDataclass):
+    # data: str = field(default=MISSING, metadata={"help": "path to data directory"})
+    data_path: str = field(
+        default="",
+        metadata={
+            "help": "path to data file"
+        },
+    )
+
+    loss_type: str = field(
+        default="L1",
+        metadata={
+            "help": "loss type, L1 or L2"
+        }
+    )
+
+    std_type: str = field(
+        default="no_std",
+        metadata={
+            "help": "standardization type, no_std or std_labels or std_logits"
+        }
+    )
+
+    readout_type: str = field(
+        default="cls",
+        metadata={
+            "help": "readout function, cls or sum or mean"
+        }
+    )
+
+    # qm9 task
+    task_idx: int = field(
+        default=0,
+        metadata={"help": "qm9 task index (range from 0 to 18)"}
+    )
+
+    sandwich_ln: bool = field(
+        default=False,
+        metadata={"help": "apply layernorm via sandwich form"},
+    )
+
+    num_classes: int = field(
+        default=-1,
+        metadata={"help": "number of classes or regression targets"},
+    )
+    init_token: Optional[int] = field(
+        default=None,
+        metadata={"help": "add token at the beginning of each batch item"},
+    )
+    separator_token: Optional[int] = field(
+        default=None,
+        metadata={"help": "add separator token between inputs"},
+    )
+    no_shuffle: bool = field(
+        default=False,
+    )
+    shorten_method: SHORTEN_METHOD_CHOICES = field(
+        default="none",
+        metadata={
+            "help": "if not none, shorten sequences that exceed tokens_per_sample"
+        },
+    )
+    shorten_data_split_list: str = field(
+        default="",
+        metadata={
+            "help": "comma-separated list of dataset splits to apply shortening to, "
+            'e.g., "train,valid" (default: all dataset splits)'
+        },
+    )
+    add_prev_output_tokens: bool = field(
+        default=False,
+        metadata={
+            "help": "add prev_output_tokens to sample, used for encoder-decoder arch"
+        },
+    )
+    max_positions: int = field(
+        default=512,
+        metadata={"help": "max tokens per example"},
+    )
+
+    dataset_name: str = field(
+        default="PCQM4M-LSC",
+        metadata={"help": "name of the dataset"},
+    )
+
+    num_atoms: int = field(
+        default=512 * 9,
+        metadata={"help": "number of atom types in the graph"},
+    )
+
+    num_edges: int = field(
+        default=512 * 3,
+        metadata={"help": "number of edge types in the graph"},
+    )
+
+    num_in_degree: int = field(
+        default=512,
+        metadata={"help": "number of in degree types in the graph"},
+    )
+
+    num_out_degree: int = field(
+        default=512,
+        metadata={"help": "number of out degree types in the graph"},
+    )
+
+    num_spatial: int = field(
+        default=512,
+        metadata={"help": "number of spatial types in the graph"},
+    )
+
+    num_edge_dis: int = field(
+        default=128,
+        metadata={"help": "number of edge dis types in the graph"},
+    )
+
+    multi_hop_max_dist: int = field(
+        default=5,
+        metadata={"help": "max distance of multi-hop edges"},
+    )
+
+    edge_type: str = field(
+        default="multi_hop",
+        metadata={"help": "edge type in the graph"},
+    )
+
+    regression_target: bool = II("criterion.regression_target")
+    # classification_head_name: str = II("criterion.classification_head_name")
+    seed: int = II("common.seed")
+
+@register_task("graph_prediction_qm9", dataclass=GraphPredictionConfigQM9)
+class GraphPredictionTaskQM9(FairseqTask):
+    """
+    Sentence (or sentence pair) prediction (classification or regression) task.
+    """
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.dm = PYGPreprocessedData(dataset_name=self.cfg.dataset_name, dataset_path=self.cfg.data_path, seed=self.cfg.seed, task_idx=self.cfg.task_idx)
+
+    @classmethod
+    def setup_task(cls, cfg, **kwargs):
+        assert cfg.num_classes > 0, "Must set task.num_classes"
+        return cls(cfg)
+
+    def load_dataset(self, split, combine=False, **kwargs):
+        """Load a given dataset split (e.g., train, valid, test)."""
+
+        assert split in ["train", "valid", "test"]
+
+        if split == "train":
+            batched_data = self.dm.dataset_train
+        elif split == "valid":
+            batched_data = self.dm.dataset_val
+        elif split == "test":
+            batched_data = self.dm.dataset_test
+
+        batched_data = BatchedDataDataset(batched_data,
+            dataset_version="3D_QM9",
             max_node=self.dm.max_node,
             multi_hop_max_dist=self.dm.multi_hop_max_dist,
             spatial_pos_max=self.dm.spatial_pos_max

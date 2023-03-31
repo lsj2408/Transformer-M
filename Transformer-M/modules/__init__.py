@@ -1,4 +1,4 @@
 from .multihead_attention import MultiheadAttention
 from .transformer_m_layers import AtomFeature, MoleculeAttnBias, Molecule3DBias
 from .transformer_m_encoder_layer import TransformerMEncoderLayer
-from .transformer_m_encoder import TransformerMEncoder, init_params
+from .transformer_m_encoder import TransformerMEncoder, TransformerMEncoderQM9, init_params

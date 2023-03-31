@@ -16,7 +16,8 @@ from fairseq.utils import safe_hasattr
 
 from ..modules import (
     init_params,
-    TransformerMEncoder
+    TransformerMEncoder,
+    TransformerMEncoderQM9,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,12 @@ class TransformerMModel(FairseqEncoderModel):
     def add_args(parser):
         """Add model-specific arguments to the parser."""
         # Arguments related to dropout
+        parser.add_argument(
+            "--remove-head", action='store_true', help="remove pre-trained prediction head"
+        )
+        parser.add_argument(
+            "--load-qm9", action='store_true', help="load qm9 model"
+        )
         parser.add_argument(
             "--mode-prob", type=str, default="0.2,0.2,0.6", help="probability of {2D+3D, 2D, 3D} mode for joint training"
         )
@@ -179,7 +186,10 @@ class TransformerMModel(FairseqEncoderModel):
 
         logger.info(args)
 
-        encoder = TransformerM(args)
+        if args.load_qm9:
+            encoder = TransformerMQM9(args)
+        else:
+            encoder = TransformerM(args)
 
         return cls(args, encoder)
 
@@ -224,8 +234,10 @@ class TransformerM(FairseqEncoder):
         )
 
         self.embed_out = None
-        self.lm_output_learned_bias = nn.Parameter(torch.zeros(1))
         self.proj_out = None
+
+        # remove_head is set to true during fine-tuning
+        self.load_softmax = not getattr(args, "remove_head", False)
 
         self.lm_head_transform_weight = nn.Linear(
             args.encoder_embed_dim, args.encoder_embed_dim
@@ -233,10 +245,16 @@ class TransformerM(FairseqEncoder):
         self.activation_fn = utils.get_activation_fn(args.activation_fn)
         self.layer_norm = LayerNorm(args.encoder_embed_dim)
 
+        if self.load_softmax:
+            self.lm_output_learned_bias = nn.Parameter(torch.zeros(1))
+            self.embed_out = nn.Linear(
+                args.encoder_embed_dim, 1, bias=False
+            )
+        else:
+            self.proj_out = ClassificationHead(
+                    args.encoder_embed_dim, args.encoder_embed_dim, args.num_classes, args.activation_fn
+                )
 
-        self.embed_out = nn.Linear(
-            args.encoder_embed_dim, 1, bias=False
-        )
 
     def forward(self, batched_data, perturb=None, segment_labels=None, masked_tokens=None, **unused):
 
@@ -248,9 +266,12 @@ class TransformerM(FairseqEncoder):
 
         x = inner_states[-1].transpose(0, 1)
 
-        x = self.layer_norm(self.activation_fn(self.lm_head_transform_weight(x)))
-        x = self.embed_out(x)
-        x = x + self.lm_output_learned_bias
+        if self.load_softmax:
+            x = self.layer_norm(self.activation_fn(self.lm_head_transform_weight(x)))
+            x = self.embed_out(x)
+            x = x + self.lm_output_learned_bias
+        else:
+            x = self.proj_out(x)
 
         return x, atom_output, {
             "inner_states": inner_states,
@@ -261,7 +282,180 @@ class TransformerM(FairseqEncoder):
         return self.max_positions
 
     def upgrade_state_dict_named(self, state_dict, name):
+        tmp_dict = {}
+        if not self.load_softmax:
+            for k in list(state_dict.keys()):
+                if (
+                    "embed_out.weight" in k
+                    or "sentence_projection_layer.weight" in k
+                    or "lm_output_learned_bias" in k
+                    or "node_proc" in k
+                    or "proj_out.ln" in k
+                ):
+                    print("Removing", k, "(because load_softmax is False)")
+                    tmp_dict[k] = state_dict[k]
+                    del state_dict[k]
+
+            may_missing_keys = [
+                'encoder.proj_out.dense.weight',
+                'encoder.proj_out.dense.bias',
+                'encoder.proj_out.out_proj.weight',
+                'encoder.proj_out.out_proj.bias',
+                'encoder.lm_head_transform_weight.weight',
+                'encoder.lm_head_transform_weight.bias',
+                'encoder.layer_norm.weight',
+                'encoder.layer_norm.bias', ]
+
+            named_parameters = {
+                "encoder." + k: v
+                for k, v in self.named_parameters()
+            }
+
+            for k in may_missing_keys:
+                if k not in state_dict.keys():
+                    state_dict[k] = named_parameters[k].data
+                    print("Copying", k, "(from model initialization)")
         return state_dict
+
+class TransformerMQM9(FairseqEncoder):
+
+    def __init__(self, args):
+        super().__init__(dictionary=None)
+        self.max_positions = args.max_positions
+
+        self.molecule_encoder = TransformerMEncoderQM9(
+            num_atoms=args.num_atoms,
+            num_in_degree=args.num_in_degree,
+            num_out_degree=args.num_out_degree,
+            num_edges=args.num_edges,
+            num_spatial=args.num_spatial,
+            num_edge_dis=args.num_edge_dis,
+            edge_type=args.edge_type,
+            multi_hop_max_dist=args.multi_hop_max_dist,
+            num_encoder_layers=args.encoder_layers,
+            embedding_dim=args.encoder_embed_dim,
+            ffn_embedding_dim=args.encoder_ffn_embed_dim,
+            num_attention_heads=args.encoder_attention_heads,
+            dropout=args.dropout,
+            attention_dropout=args.attention_dropout,
+            activation_dropout=args.act_dropout,
+            max_seq_len=self.max_positions,
+            num_segments=args.num_segment,
+            use_position_embeddings=not args.no_token_positional_embeddings,
+            encoder_normalize_before=args.encoder_normalize_before,
+            apply_init=args.apply_init,
+            activation_fn=args.activation_fn,
+            learned_pos_embedding=args.encoder_learned_pos,
+            sandwich_ln=args.sandwich_ln,
+            droppath_prob=args.droppath_prob,
+            add_3d=args.add_3d,
+            num_3d_bias_kernel=args.num_3d_bias_kernel,
+            no_2d=args.no_2d,
+            mode_prob=args.mode_prob,
+        )
+
+        self.embed_out = None
+        self.proj_out = None
+
+        # remove_head is set to true during fine-tuning
+        self.load_softmax = not getattr(args, "remove_head", False)
+
+        self.lm_head_transform_weight = nn.Linear(
+            args.encoder_embed_dim, args.encoder_embed_dim
+        )
+        self.activation_fn = utils.get_activation_fn(args.activation_fn)
+        self.layer_norm = LayerNorm(args.encoder_embed_dim)
+
+        if self.load_softmax:
+            self.lm_output_learned_bias = nn.Parameter(torch.zeros(1))
+            self.embed_out = nn.Linear(
+                args.encoder_embed_dim, 1, bias=False
+            )
+        else:
+            self.proj_out = ClassificationHead(
+                    args.encoder_embed_dim, args.encoder_embed_dim, args.num_classes, args.activation_fn
+                )
+
+
+    def forward(self, batched_data, perturb=None, segment_labels=None, masked_tokens=None, **unused):
+
+        inner_states, atom_output = self.molecule_encoder(
+            batched_data,
+            segment_labels=segment_labels,
+            perturb=perturb,
+        )
+
+        x = inner_states[-1].transpose(0, 1)
+
+        if self.load_softmax:
+            x = self.layer_norm(self.activation_fn(self.lm_head_transform_weight(x)))
+            x = self.embed_out(x)
+            x = x + self.lm_output_learned_bias
+        else:
+            x = self.proj_out(x)
+
+        return x, atom_output, {
+            "inner_states": inner_states,
+        }
+
+    def max_positions(self):
+        """Maximum output length supported by the encoder."""
+        return self.max_positions
+
+    def upgrade_state_dict_named(self, state_dict, name):
+        tmp_dict = {}
+        if not self.load_softmax:
+            for k in list(state_dict.keys()):
+                if (
+                    "embed_out.weight" in k
+                    or "sentence_projection_layer.weight" in k
+                    or "lm_output_learned_bias" in k
+                    or "node_proc" in k
+                    or "proj_out.ln" in k
+                ):
+                    print("Removing", k, "(because load_softmax is False)")
+                    tmp_dict[k] = state_dict[k]
+                    del state_dict[k]
+
+            may_missing_keys = [
+                'encoder.proj_out.dense.weight',
+                'encoder.proj_out.dense.bias',
+                'encoder.proj_out.out_proj.weight',
+                'encoder.proj_out.out_proj.bias',
+                'encoder.lm_head_transform_weight.weight',
+                'encoder.lm_head_transform_weight.bias',
+                'encoder.layer_norm.weight',
+                'encoder.layer_norm.bias', ]
+
+            named_parameters = {
+                "encoder." + k: v
+                for k, v in self.named_parameters()
+            }
+
+            for k in may_missing_keys:
+                if k not in state_dict.keys():
+                    state_dict[k] = named_parameters[k].data
+                    print("Copying", k, "(from model initialization)")
+        return state_dict
+
+
+class ClassificationHead(nn.Module):
+    """Head for classification tasks."""
+
+    def __init__(self, input_dim, inner_dim, num_classes, activation_fn, pooler_dropout=0.0):
+        super().__init__()
+        self.dense = nn.Linear(input_dim, inner_dim)
+        self.activation_fn = utils.get_activation_fn(activation_fn)
+        self.dropout = nn.Dropout(p=pooler_dropout)
+        self.out_proj = nn.Linear(inner_dim, num_classes)
+
+    def forward(self, features, **kwargs):
+        x = self.dropout(features)
+        x = self.dense(x)
+        x = self.activation_fn(x)
+        x = self.dropout(x)
+        x = self.out_proj(x)
+        return x
 
 @register_model_architecture("Transformer-M", "transformer_m")
 def base_architecture(args):

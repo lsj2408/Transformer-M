@@ -4,7 +4,8 @@
 from typing import Optional
 from torch_geometric.datasets import *
 from torch_geometric.data import Dataset
-from .pyg_dataset import GraphormerPYGDataset
+from .pyg_dataset import GraphormerPYGDataset, GraphormerPYGDatasetQM9
+from .qm9 import newQM9, newHQM9
 import torch.distributed as dist
 
 
@@ -34,6 +35,21 @@ class MyQM9(QM9):
             super(MyQM9, self).process()
         if dist.is_initialized():
             dist.barrier()
+
+
+class MyHQM9(newHQM9):
+    def download(self):
+        if not dist.is_initialized() or dist.get_rank() == 0:
+            super(MyHQM9, self).download()
+        if dist.is_initialized():
+            dist.barrier()
+
+    def process(self):
+        if not dist.is_initialized() or dist.get_rank() == 0:
+            super(MyHQM9, self).process()
+        if dist.is_initialized():
+            dist.barrier()
+
 
 class MyZINC(ZINC):
     def download(self):
@@ -82,10 +98,15 @@ class PYGDatasetLookupTable:
         test_set = None
 
         root = "dataset"
+        qm9_data = False
         if name == "qm7b":
             inner_dataset = MyQM7b(root=root)
         elif name == "qm9":
             inner_dataset = MyQM9(root=root)
+            qm9_data = True
+        elif name == "qm9H":
+            inner_dataset = MyHQM9(root=root)
+            qm9_data = True
         elif name == "zinc":
             inner_dataset = MyZINC(root=root)
             train_set = MyZINC(root=root, split="train")
@@ -110,10 +131,20 @@ class PYGDatasetLookupTable:
                     train_set,
                     valid_set,
                     test_set,
+                ) if not qm9_data else GraphormerPYGDatasetQM9(
+                    None,
+                    seed,
+                    None,
+                    None,
+                    None,
+                    train_set,
+                    valid_set,
+                    test_set,
                 )
         else:
+            data_func = GraphormerPYGDataset if not qm9_data else GraphormerPYGDatasetQM9
             return (
                 None
                 if inner_dataset is None
-                else GraphormerPYGDataset(inner_dataset, seed)
+                else data_func(inner_dataset, seed)
             )

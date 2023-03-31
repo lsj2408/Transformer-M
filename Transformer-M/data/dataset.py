@@ -7,8 +7,9 @@ from torch.nn import functional as F
 from fairseq.data import FairseqDataset, BaseWrapperDataset, data_utils
 
 from .wrapper import MyPygPCQM4MDataset, MyPygPCQM4MPosDataset
-from .collator import collator, collator_3d
+from .collator import collator, collator_3d, collator_3d_qm9
 from .ogb_datasets import OGBDatasetLookupTable
+from .pyg_datasets import PYGDatasetLookupTable
 
 class PCQPreprocessedData():
     def __init__(self, dataset_name, dataset_path = "../dataset"):
@@ -50,6 +51,34 @@ class PCQPreprocessedData():
         self.metric_mode = 'min'
         self.evaluator = PCQM4Mv2Evaluator(),
 
+
+class PYGPreprocessedData():
+    def __init__(self, dataset_name, dataset_path = "../dataset", seed=42, task_idx=4):
+        super().__init__()
+
+        self.dataset_name = dataset_name
+        self.dataset = PYGDatasetLookupTable.GetPYGDataset(dataset_name, seed=seed, dataset_path=dataset_path, task_idx=task_idx)
+        self.setup()
+
+    def setup(self, stage: str = None):
+        self.train_idx = self.dataset.train_idx
+        self.valid_idx = self.dataset.valid_idx
+        self.test_idx = self.dataset.test_idx
+
+        self.dataset_train = self.dataset.train_data
+        self.dataset_val = self.dataset.valid_data
+        self.dataset_test = self.dataset.test_data
+
+        self.max_node = 128
+        self.multi_hop_max_dist = 5
+        self.spatial_pos_max = 1024
+        self.loss_fn = F.l1_loss
+        self.num_class = 1
+        self.metric = 'mae'
+        self.metric_mode = 'min'
+        self.evaluator = PCQM4Mv2Evaluator(),
+
+
 class OGBPreprocessedData():
     def __init__(self, dataset_name, dataset_path = "../dataset", seed=42):
         super().__init__()
@@ -76,7 +105,7 @@ class BatchedDataDataset(FairseqDataset):
         self.spatial_pos_max = spatial_pos_max
 
         self.dataset_version = dataset_version
-        assert self.dataset_version in ["2D", "3D"]
+        assert self.dataset_version in ["2D", "3D", "3D_QM9"]
 
     def __getitem__(self, index):
         item = self.dataset[int(index)]
@@ -86,7 +115,12 @@ class BatchedDataDataset(FairseqDataset):
         return len(self.dataset)
 
     def collater(self, samples):
-        collator_fn = collator if self.dataset_version == '2D' else collator_3d
+        if self.dataset_version == "3D":
+            collator_fn = collator_3d
+        elif self.dataset_version == "3D_QM9":
+            collator_fn = collator_3d_qm9
+        else:
+            collator_fn = collator
         return collator_fn(samples,
             max_node=self.max_node,
             multi_hop_max_dist=self.multi_hop_max_dist,
